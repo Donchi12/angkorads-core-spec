@@ -1,36 +1,75 @@
-# Angkorads 📣⚡
-### High-Traffic P2P Advertising Marketplace & Real-Time Bidding Infrastructure
+# AngkorAds
 
-Angkorads is a high-performance, real-time peer advertising marketplace engineered to process instantaneous ad matching, programmatic ad bidding during live streams, and heavy real-time data orchestration. 
+### Marketplace / Social Commerce — Architecture Case Study
 
-The architecture is built from the ground up to bypass traditional static database polling, shifting the entire transactional lifecycle onto an event-driven serverless background infrastructure capable of smoothly routing live system actions and eliminating server execution limits under heavy concurrent user distributions.
+AngkorAds is an all-in-one marketplace built from scratch for the Cambodian market. It combines product listings, advanced search, image-based product discovery, social features, advertising, boosting, bidding and real-time interactions.
 
----
+The production application is private. This repository documents the architecture and engineering decisions without exposing proprietary source code.
 
-## ⚡ Key Architectural Capabilities
+## Product Scope
 
-*   **Social Cross-Livestreaming Array:** Native third-party social media authentication integrations allowing content creators to stream live broadcasts across multiple platforms simultaneously.
-*   **Inngest Background Orchestration:** Handles heavy video encoding, dynamic listing metrics, and live streaming tasks concurrently via asynchronous, serverless step-functions.
-*   **Live Stream Bidding Engine:** High-velocity pricing engines built to process, sequence, and resolve incoming bidding vectors instantaneously during live broadcast streams without concurrency lockouts.
-*   **Decoupled Chat Server via WebSockets:** Persistent, duplex communication channels routing high-volume live user marketplace interactions natively with zero UI-thread blocking.
+- Product listings and discovery
+- Advanced text and image-based search
+- Seller advertising and listing boosts
+- Normal and live bidding flows
+- Social interactions and real-time communication
+- Background processing for work that should not block user requests
+- Payment integrations
 
----
+## Architecture
 
-## 🏗️ Technical Stack & System Infrastructure
+```mermaid
+flowchart LR
+    A[Next.js / React] --> B[Application APIs]
+    B --> C[(Supabase / PostgreSQL)]
+    B --> D[Background Workflows]
+    B --> E[Realtime Services]
+    D --> F[External Integrations]
+    E --> A
+```
 
-*   **Runtime & State Management:** Node.js, TypeScript, Next.js, TanStack React Query
-*   **Real-Time Backplane:** Socket.io / WebSockets, Custom Event Handlers
-*   **Data & Identity Management:** Supabase Data Layer, PostgreSQL, Inngest Serverless Infrastructure
-*   **Media Processing Engine:** Cloud-Native Background Video Transcoders & Multi-Stream Encoders
+## Core Stack
 
----
+**Frontend:** Next.js, React, TypeScript, Tailwind CSS  
+**State:** TanStack React Query, Zustand  
+**Backend:** Node.js, REST APIs  
+**Data:** Supabase, PostgreSQL  
+**Async processing:** Inngest  
+**Realtime:** WebSockets / Supabase Realtime  
+**Deployment:** Vercel  
+**Payments:** Stripe and local payment flows  
+**Media:** Image-processing workflows
 
-## 🛠️ Solved Engineering Bottlenecks
+## Engineering Challenges
 
-### 1. Eliminating Race Conditions During Flash Live Stream Bidding
-*   **Challenge:** Multiple concurrent users attempting to place competing bids on an ad placement at the exact same millisecond during a live stream caused database write deadlocks and duplicate assignments.
-*   **Solution:** Implemented an event queue layer utilizing lightweight atomic mutations. Incoming bids are processed in an orderly queue structure before hitting the main persistent database, ensuring that only the absolute fastest resolved microsecond bid locks the table state.
+### Background processing
 
-### 2. Eliminating Serverless Lifecycle Timeouts Across Multi-Stream Video Payloads
-*   **Challenge:** Processing heavy live streaming arrays, background ad listing updates, and cross-platform video broadcasts instantly triggered standard gateway server timeouts.
-*   **Solution:** Implemented structural architecture decoupling. Video metadata and rendering states are split into optimized chunks and offloaded to an asynchronous Inngest orchestration layer. The platform executes the intense task in the background, continuously resolving timeout locks while updating live views securely.
+Some operations are too expensive or slow to keep inside a normal request/response cycle. Those operations are moved into background workflows so the API can return without waiting for the complete processing lifecycle.
+
+### Realtime interactions
+
+Chat and live marketplace activity require state changes to reach connected clients quickly. Realtime communication is used where polling would add unnecessary latency and load.
+
+### State separation
+
+Server state and local UI state have different lifecycles. TanStack React Query handles server-backed state and caching, while Zustand handles focused client-side state.
+
+### Search and image discovery
+
+Product discovery combines structured product data with image-processing workflows to support discovery beyond simple keyword matching.
+
+## Selected Engineering Decisions
+
+**Async work:** Use background workflows for long-running operations.  
+**Trade-off:** Adds job lifecycle, retry and eventual-consistency concerns.
+
+**Realtime:** Use realtime channels for interactions where immediate updates matter.  
+**Trade-off:** Requires careful connection, authorization and state-reconciliation handling.
+
+**State management:** Separate server state from local UI state.  
+**Trade-off:** Requires clear boundaries between query/mutation state and local interaction state.
+
+## Private Production Code
+
+The production repository contains proprietary business logic and infrastructure. This public case study intentionally focuses on architecture, engineering decisions and system boundaries.
+
